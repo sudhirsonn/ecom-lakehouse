@@ -1,0 +1,25 @@
+# =============================================================
+# resources/pipeline.yml — the medallion Declarative Pipeline.
+# Builds Silver + Gold (Bronze is refreshed by the job's SQL task).
+# The target catalog comes from the ${var.catalog} variable, so the
+# same definition deploys to ecom_dev / ecom_test / ecom_prod.
+# =============================================================
+resources:
+  pipelines:
+    ecom_medallion_pipeline:
+      name: "[${bundle.target}] ecom_medallion_pipeline"
+      catalog: ${var.catalog}
+      schema: 02_silver          # default target schema; Gold tables qualify to 03_gold
+      serverless: true
+      photon: true
+      libraries:
+        - glob:
+            include: ../src/bronze/**
+        - glob:
+            include: ../src/silver/**
+        - glob:
+            include: ../src/gold/**
+      configuration:
+        catalog: ${var.catalog}
+        landing_volume_path: "/Volumes/${var.catalog}/01_bronze/raw_landing"
+        bundle.target: ${bundle.target}

@@ -1,0 +1,17 @@
+# Deploy on merge to main -> test target. (Prod could be a separate
+# workflow gated on a release tag or manual approval.)
+name: Deploy bundle
+on:
+  push:
+    branches: [main]
+jobs:
+  deploy-test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: databricks/setup-cli@main
+      - name: Deploy to test
+        env:
+          DATABRICKS_HOST: ${{ vars.DATABRICKS_HOST }}
+          DATABRICKS_TOKEN: ${{ secrets.SP_TOKEN }}
+        run: databricks bundle deploy -t test

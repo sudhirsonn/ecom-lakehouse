@@ -1,0 +1,17 @@
+# Validate the bundle on every PR to main. Catches config/syntax
+# errors before they can be deployed.
+name: Validate bundle
+on:
+  pull_request:
+    branches: [main]
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: databricks/setup-cli@main
+      - name: Validate (dev target)
+        env:
+          DATABRICKS_HOST: ${{ vars.DATABRICKS_HOST }}
+          DATABRICKS_TOKEN: ${{ secrets.SP_TOKEN }}
+        run: databricks bundle validate -t dev

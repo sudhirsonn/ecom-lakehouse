@@ -1,0 +1,63 @@
+# =============================================================
+# databricks.yml — root config for the e-commerce lakehouse
+# Declarative Automation Bundle.
+#
+# Single-workspace, multi-catalog promotion: dev/test/prod all
+# deploy to the SAME workspace but target DIFFERENT catalogs
+# (ecom_dev / ecom_test / ecom_prod). The `catalog` variable is
+# the switch — each target overrides it, and it flows into the
+# pipeline + job resource definitions.
+# =============================================================
+
+bundle:
+  name: ecom_lakehouse
+
+include:
+  - resources/*.yml
+
+# Declared once, overridden per target.
+variables:
+  catalog:
+    description: Unity Catalog catalog for this environment.
+    default: ecom_dev
+  warehouse_id:
+    description: SQL warehouse ID for the bronze_refresh SQL task.
+    default: "a97b22344ce028df"   # set per environment, or pass at deploy time
+  landing_subpath:
+    description: Per-environment landing subfolder under the shared container.
+    default: dev
+
+# All three targets share ONE workspace host (single-workspace,
+# catalog-per-environment isolation). Swap in your workspace URL.
+targets:
+  # DEV — engineers iterate. development mode name-prefixes resources
+  # with the deploying user so deployments don't collide.
+  dev:
+    mode: development
+    default: true
+    workspace:
+      host: https://adb-7405615735982437.17.azuredatabricks.net
+    variables:
+      catalog: ecom_dev
+      landing_subpath: dev
+
+  # TEST — integration target, deployed by CI on merge to main.
+  # production mode = no user prefixing, fresh state each deploy.
+  test:
+    mode: production
+    workspace:
+      host: https://adb-7405615735982437.17.azuredatabricks.net
+      root_path: /Shared/.bundle/test/${bundle.name}
+    variables:
+      catalog: ecom_test
+      landing_subpath: test
+
+  # PROD — deployed by CI on tagged release / main merge.
+  prod:
+    mode: production
+    workspace:
+      host: https://adb-7405615735982437.17.azuredatabricks.net
+      root_path: /Shared/.bundle/prod/${bundle.name}
+    variables:
+      catalog: ecom_prod
+      landing_subpath: prod

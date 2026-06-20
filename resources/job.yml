@@ -1,0 +1,25 @@
+# =============================================================
+# resources/job.yml — the medallion orchestration job.
+# Now that Bronze lives IN the pipeline (Option 1), the pipeline
+# runs the full Bronze->Silver->Gold DAG, so the job is a single
+# scheduled pipeline task. (The earlier separate bronze_refresh
+# SQL task is no longer needed.)
+# =============================================================
+resources:
+  jobs:
+    ecom_medallion_job:
+      name: "[${bundle.target}] ecom_medallion_job"
+
+      schedule:
+        quartz_cron_expression: "0 0 6 * * ?"   # 06:00 daily
+        timezone_id: "America/Chicago"
+        pause_status: PAUSED                      # unpause in prod
+
+      email_notifications:
+        on_failure:
+          - sudhirsonn@hotmail.com
+
+      tasks:
+        - task_key: run_medallion_pipeline
+          pipeline_task:
+            pipeline_id: ${resources.pipelines.ecom_medallion_pipeline.id}
