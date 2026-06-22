@@ -19,8 +19,6 @@ catalog = spark.conf.get("catalog")
 def slv_customers():
     return (
         spark.readStream.table(f"{catalog}.`01_bronze`.br_customers")
-        # dedup: one row per customer_id
-        .dropDuplicates(["customer_id"])
         # standardize city: trim whitespace + title-case
         .withColumn("city", initcap(trim(col("city"))))
         # standardize state: trim + uppercase
@@ -42,5 +40,7 @@ def slv_customers():
             to_timestamp("signup_date", "dd-MM-yyyy"),
             to_timestamp("signup_date", "yyyy-MM-dd") 
         ))
+        # dedup: one row per customer_id        
+        .dropDuplicates(["customer_id", "signup_ts"])
         .select("customer_id", "customer_name", "email", "city", "state", "signup_date", "signup_ts")
     )
